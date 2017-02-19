@@ -9,7 +9,21 @@ const User = db.define('user', {
 		validate: {isEmail: true}, 
 		allowNull: false
 	}
-});
+},
+{
+	classMethods: {
+		getUsers: function(id){
+			const where = (id)?{id: id}:{};
+			return User.findAll({
+				include: [
+					Page
+				],
+				where: where
+			});
+		}
+	}
+}
+);
 
 const Page = db.define('page', {
 	title: {type: Sequelize.STRING, allowNull: false},
@@ -30,13 +44,42 @@ const Page = db.define('page', {
 		}
 	},
 	classMethods: {
-		getPages: ()=>{
+		getPages: (id)=>{
+			let where = (id)?{"id": id}:{};
 			return Page.findAll({
-				include: User
+				include: [
+					User
+				],
+				where: where
 			});
+		},
+		createPage: (input)=> {
+			return User.findOrCreate({where: {name: input.name, email: input.email}})
+			.then((user)=> {
+				return Page.create({
+					userId: user[0].id,
+					title: input.title,
+					content: input.content
+				});
+			})
+			.then((page)=>{
+				return page;
+			})
+			.catch((err)=> {
+				console.log('err = ', err);
+			})
+		}
+	},
+	hooks: {
+		beforeValidate: function(page) {
+			if (page.title){
+					page.urlTitle = page.title.replace(/\s+/gi, '_').replace(/\W/g, '')
+				} else {
+					page.urlTitle = Math.random().toString(36).substring(2,7);
+				}
 		}
 	}
-});
+});	
 
 Page.belongsTo(User);
 User.hasMany(Page);
@@ -52,7 +95,7 @@ const createPage = (input)=> {
 		});
 	})
 	.then((page)=>{
-		console.log('page = ', page);
+		return page;
 	})
 	.catch((err)=> {
 		console.log('err = ', err);
@@ -77,17 +120,20 @@ const seed = ()=> {
 		{
 			title: 'Point of No Return',
 			urlTitle: 'point_of_no_return',
-			content: 'Ask not...'
+			content: 'Ask not...',
+			userId: 1
 		}, 
 		{
 			title: 'Southern Man',
 			urlTitle: 'southern_man',
-			content: 'Keep your head'
+			content: 'Keep your head',
+			userId: 2
 		},  
 		{
 			title: 'CarnEvil 9',
 			urlTitle: 'carnevil_9',
-			content: 'Welcome back my friends'
+			content: 'Welcome back my friends',
+			userId: 2
 		}
 	];
 	const userPromises = users.map((user)=> {
@@ -112,8 +158,6 @@ module.exports = {
 	sync,
 	seed,
 	createPage,
-	models:{
-		Page,
-		User
-	}
+	Page,
+	User
 };

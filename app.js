@@ -5,22 +5,24 @@ const bodyParser = require('body-parser');
 const nunjucks = require('nunjucks');
 const db = require('./models');
 const wikiRouter = require('./routes/wiki');
+const userRouter= require('./routes/user');
+const methodOverride = require('method-override');
 
 const app = express();
 const port = process.env.PORT || 3000;
 const noCache = process.env.NOCACHE || false;
 
+app.use(methodOverride("_method"));
 app.use(morgan('combined'));
 app.use(express.static("public"));
 app.use(express.static(path.join(__dirname, 'node_modules')));
 app.use(bodyParser.urlencoded({extended: false}));
 app.set('view engine', 'html');
 app.engine('html', nunjucks.render);
-console.log('noCache = ', noCache) 
 nunjucks.configure('views', {noCache: noCache});
 
 app.get('/', (req, res, next)=> {
-	db.models.User.findAll()
+	db.User.findAll()
 	.then((users)=> {
 		res.render("index");
 	})
@@ -29,7 +31,8 @@ app.get('/', (req, res, next)=> {
 	});
 });
 
-app.use('/wiki', wikiRouter);
+app.use('/wiki', wikiRouter); 
+app.use('/users', userRouter);
 
 db.sync()
 .then(()=> {
