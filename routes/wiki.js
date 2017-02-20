@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const db = require('../models');
 const Page = db.Page;
-const methodOverride = require('method-override');
+// const methodOverride = require('method-override');
 
 
-router.use(methodOverride("_method"));
+// router.use(methodOverride("_method"));
 
 
 
@@ -31,7 +31,6 @@ router.get('/:id', (req, res, next)=> {
 	.catch((err)=>{
 		console.log("error: ", err)
 	});
-		
 });
 
 router.post('/',(req, res, next)=> {
@@ -42,7 +41,19 @@ router.post('/',(req, res, next)=> {
 });
 
 router.delete('/:id', (req, res, next)=> {
-	console.log('param -', req.params.id)
-})
+	Page.destroy({where: { id: req.params.id } } )
+	.then(()=> {
+		res.redirect('/wiki/');
+	})
+	.catch((err)=> {
+		console.log(err);
+	});
+});
+
+router.get('/edit/:id', (req, res, next)=> {
+	res.render('edit')
+});
+
+
 
 module.exports = router;
